@@ -25,7 +25,7 @@ public class WorkspaceController : ControllerBase
         {
             return NotFound("Workspace not found.");
         }
-        return workspace;
+        return Ok(workspace);
     }
 
     [HttpPost("/device/add")]
