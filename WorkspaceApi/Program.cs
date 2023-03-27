@@ -8,7 +8,7 @@ foreach (var line in File.ReadAllLines(Path.Combine(Directory.GetCurrentDirector
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
-builder.Services.AddScoped<WorkspaceService, WorkspaceService>();
+builder.Services.AddScoped<IWorkspaceService, WorkspaceService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

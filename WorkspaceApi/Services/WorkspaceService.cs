@@ -3,7 +3,7 @@ using WorkspaceApi.Models;
 
 namespace WorkspaceApi.Services;
 
-public class WorkspaceService
+public class WorkspaceService : IWorkspaceService
 {
     private readonly IMongoCollection<Workspace> _workspaces;
 

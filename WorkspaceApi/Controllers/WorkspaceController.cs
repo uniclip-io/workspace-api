@@ -9,9 +9,9 @@ namespace WorkspaceApi.Controllers;
 [Route("workspace")]
 public class WorkspaceController : ControllerBase
 {
-    private readonly WorkspaceService _service;
+    private readonly IWorkspaceService _service;
 
-    public WorkspaceController(WorkspaceService workspaceService)
+    public WorkspaceController(IWorkspaceService workspaceService)
     {
         _service = workspaceService;
     }
