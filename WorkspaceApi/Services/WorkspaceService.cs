@@ -14,7 +14,7 @@ public class WorkspaceService : IWorkspaceService
         _workspaces = database.GetCollection<Workspace>("workspaces");
     }
 
-    public async Task<Workspace> Get(Guid userId)
+    public async Task<Workspace?> Get(Guid userId)
     {
         return await _workspaces.Find(w => w.UserId == userId).FirstOrDefaultAsync();
     }

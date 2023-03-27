@@ -19,7 +19,13 @@ public class WorkspaceController : ControllerBase
     [HttpGet("/device/user/{userId:guid}")]
     public async Task<ActionResult<Workspace>> Get(Guid userId)
     {
-        return await _service.Get(userId);
+        var workspace = await _service.Get(userId);
+
+        if (workspace == null)
+        {
+            return NotFound("Workspace not found.");
+        }
+        return workspace;
     }
 
     [HttpPost("/device/add")]
