@@ -1,57 +1,48 @@
-using MongoDB.Driver;
 using WorkspaceApi.Models;
+using WorkspaceApi.Repositories;
 
 namespace WorkspaceApi.Services;
 
-public class WorkspaceService : IWorkspaceService
+public class WorkspaceService
 {
-    private readonly IMongoCollection<Workspace> _workspaces;
+    private readonly DeviceRepository _deviceRepository;
+    private readonly WorkspaceRepository _workspaceRepository;
 
-    public WorkspaceService()
+    public WorkspaceService(WorkspaceRepository workspaceRepository, DeviceRepository deviceRepository)
     {
-        var mongoClient = new MongoClient(Environment.GetEnvironmentVariable("DB_CONNECTION"));
-        var database = mongoClient.GetDatabase("workspaces");
-        _workspaces = database.GetCollection<Workspace>("workspaces");
+        _workspaceRepository = workspaceRepository;
+        _deviceRepository = deviceRepository;
     }
 
-    public async Task<Workspace?> Get(Guid userId)
+    public async Task<Workspace> CreateWorkspace(Guid userId)
     {
-        return await _workspaces.Find(w => w.UserId == userId).FirstOrDefaultAsync();
+        var workspaceContract = await _workspaceRepository.CreateWorkspaceForUser(userId);
+        return new Workspace(workspaceContract.Id, userId, new List<Device>());
     }
 
-    public async Task<Workspace> Create(Guid userId)
+    public async Task<Workspace?> GetWorkspaceByUserId(Guid userId)
     {
-        var workspace = new Workspace
-        {
-            Id = Guid.NewGuid(),
-            UserId = userId,
-            Devices = new List<Device>()
-        };
-        
-        await _workspaces.InsertOneAsync(workspace);
-        
-        return workspace;
+        var workspaceContract = await _workspaceRepository.GetWorkspaceByUserId(userId);
+
+        if (workspaceContract == null) return null;
+
+        var deviceContracts = await _deviceRepository.GetDevicesByWorkspaceId(workspaceContract.Id);
+        var devices = deviceContracts.Select(d => new Device(d.Id, d.WorkspaceId, d.Name, d.Date)).ToList();
+
+        return new Workspace(workspaceContract.Id, userId, devices);
     }
 
-    public async Task<Workspace> Update(Workspace workspace)
+    public async Task<Device> AddDeviceToWorkspace(Guid workspaceId, string name)
     {
-        var replaceResult = await _workspaces.ReplaceOneAsync(w => w.UserId == workspace.UserId, workspace);
-
-        if (replaceResult.ModifiedCount == 0)
-        {
-            throw new ArgumentException($"Workspace for user {workspace.UserId} not found.");
-        }
-        return workspace;
+        var deviceContract = await _deviceRepository.AddDeviceToWorkspace(workspaceId, name);
+        return new Device(deviceContract.Id, workspaceId, deviceContract.Name, deviceContract.Date);
     }
 
-    public async Task<Workspace> Delete(Workspace workspace)
+    public async Task<Device?> RemoveDeviceFromWorkspace(Guid workspaceId, Guid deviceId)
     {
-        var deleteResult = await _workspaces.DeleteOneAsync(w => w.UserId == workspace.UserId);
-
-        if (deleteResult.DeletedCount == 0)
-        {
-            throw new ArgumentException($"Workspace for user {workspace.UserId} not found.");
-        }
-        return workspace;
+        var deviceContract = await _deviceRepository.RemoveDeviceFromWorkspace(workspaceId, deviceId);
+        return deviceContract == null
+            ? null
+            : new Device(deviceContract.Id, workspaceId, deviceContract.Name, deviceContract.Date);
     }
 }
