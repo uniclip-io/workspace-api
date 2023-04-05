@@ -10,7 +10,7 @@ public class WorkspaceRepository
     public WorkspaceRepository(string connectionString)
     {
         var mongoClient = new MongoClient(connectionString);
-        var database = mongoClient.GetDatabase("workspace-service");
+        var database = mongoClient.GetDatabase("workspace-api");
         _workspaces = database.GetCollection<WorkspaceContract>("workspaces");
     }
 

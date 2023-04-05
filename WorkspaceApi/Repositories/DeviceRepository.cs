@@ -10,7 +10,7 @@ public class DeviceRepository
     public DeviceRepository(string connectionString)
     {
         var mongoClient = new MongoClient(connectionString);
-        var database = mongoClient.GetDatabase("workspace-service");
+        var database = mongoClient.GetDatabase("workspace-api");
         _devices = database.GetCollection<DeviceContract>("devices");
     }
 
