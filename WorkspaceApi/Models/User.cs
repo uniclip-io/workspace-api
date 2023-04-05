@@ -1,8 +1,6 @@
 namespace WorkspaceApi.Models;
 
-public class User
-{
-    public Guid Id { get; set; }
-
-    public int MaxConnectedDevices { get; set; }
-}
+public record User(
+    Guid Id,
+    int MaxConnectedDevices
+);

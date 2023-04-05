@@ -1,8 +1,8 @@
 namespace WorkspaceApi.Models;
 
-public class Device
-{
-    public Guid Id { get; set; }
-
-    public string? Name { get; set; }
-}
+public record Device(
+    Guid Id,
+    Guid WorkspaceId,
+    string Name,
+    DateTime Date
+);
