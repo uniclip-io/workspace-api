@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using WorkspaceApi.Dtos;
 using WorkspaceApi.Models;
-using WorkspaceApi.Models.DTOs;
 using WorkspaceApi.Services;
 
 namespace WorkspaceApi.Controllers;
@@ -9,86 +9,59 @@ namespace WorkspaceApi.Controllers;
 [Route("workspace")]
 public class WorkspaceController : ControllerBase
 {
-    private readonly IWorkspaceService _service;
+    private readonly WorkspaceService _workspaceService;
 
-    public WorkspaceController(IWorkspaceService workspaceService)
+    public WorkspaceController(WorkspaceService workspaceService)
     {
-        _service = workspaceService;
+        _workspaceService = workspaceService;
     }
 
     [HttpGet("/device/user/{userId:guid}")]
     public async Task<ActionResult<Workspace>> Get(Guid userId)
     {
-        var workspace = await _service.Get(userId);
+        var workspace = await _workspaceService.GetWorkspaceByUserId(userId);
 
         if (workspace == null)
         {
             return NotFound("Workspace not found.");
         }
+
         return Ok(workspace);
     }
 
     [HttpPost("/device/add")]
-    public async Task<ActionResult<Workspace>> ConnectDevice(DeviceDto data)
+    public async Task<ActionResult<Device>> ConnectDevice(AddDeviceDto addDeviceDto)
     {
-        var workspace = await _service.Get(data.UserId);
+        var userId = addDeviceDto.UserId;
 
-        if (workspace == null)
+        var workspace = await _workspaceService.GetWorkspaceByUserId(userId) ??
+                        await _workspaceService.CreateWorkspace(userId);
+
+        if (workspace.Devices.Find(d => d.Name == addDeviceDto.Name) != null)
         {
-            workspace = await _service.Create(data.UserId);
+            return UnprocessableEntity("Device with name already exists.");
         }
-        else if (workspace.Devices.FindIndex(d => d.Id == data.Device.Id) != -1)
-        {
-            return UnprocessableEntity("Device already connected.");
-        }
-        
-        workspace.Devices.Add(data.Device);
-        await _service.Update(workspace);
-        return Ok(workspace);
+
+        var device = await _workspaceService.AddDeviceToWorkspace(workspace.Id, addDeviceDto.Name);
+        return Ok(device);
     }
-    
-    [HttpPost("/device/remove")]
-    public async Task<ActionResult<Workspace>> DisconnectDevice(DeviceDto data)
+
+    [HttpDelete("/device/remove")]
+    public async Task<ActionResult<Device>> DisconnectDevice(RemoveDeviceDto removeDeviceDto)
     {
-        var workspace = await _service.Get(data.UserId);
+        var workspace = await _workspaceService.GetWorkspaceByUserId(removeDeviceDto.UserId);
 
         if (workspace == null)
         {
             return NotFound("Workspace not found.");
         }
 
-        var device = workspace.Devices.SingleOrDefault(d => d!.Id == data.Device.Id, null);
-
-        if (device == null)
+        if (workspace.Devices.Find(d => d.Id == removeDeviceDto.DeviceId) == null)
         {
             return NotFound("Device not found.");
         }
 
-        workspace.Devices.Remove(device);
-        await _service.Update(workspace);
-        return Ok(workspace);
-    }
-    
-    [HttpPost("/device/update")]
-    public async Task<ActionResult<Workspace>> UpdateDevice(DeviceDto data)
-    {
-        var workspace = await _service.Get(data.UserId);
-
-        if (workspace == null)
-        {
-            return NotFound("Workspace not found.");
-        }
-
-        var device = workspace.Devices.SingleOrDefault(d => d!.Id == data.Device.Id, null);
-
-        if (device == null)
-        {
-            return NotFound("Device not found.");
-        }
-
-        workspace.Devices.Remove(device);
-        workspace.Devices.Add(data.Device);
-        await _service.Update(workspace);
-        return Ok(workspace);
+        var device = await _workspaceService.RemoveDeviceFromWorkspace(workspace.Id, removeDeviceDto.DeviceId);
+        return Ok(device);
     }
 }
