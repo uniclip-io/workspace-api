@@ -1,3 +1,5 @@
+using Bugsnag;
+using WorkspaceApi.Middlewares;
 using WorkspaceApi.Repositories;
 using WorkspaceApi.Services;
 
@@ -6,6 +8,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddSingleton<IClient>(_ => new Client(builder.Configuration["ApiKeys:Bugsnag"]));
 builder.Services.AddSingleton(_ => new WorkspaceRepository(builder.Configuration["ConnectionStrings:MongoDb"]!));
 builder.Services.AddSingleton(_ => new DeviceRepository(builder.Configuration["ConnectionStrings:MongoDb"]!));
 builder.Services.AddScoped<WorkspaceService, WorkspaceService>();
@@ -18,6 +21,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<HttpExceptionMiddleware>();
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
